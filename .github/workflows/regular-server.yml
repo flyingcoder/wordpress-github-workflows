@@ -1,0 +1,80 @@
+name: Deploy Main to Regular Server
+
+on:
+  push:
+    branches:
+      - live
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Cache Env
+      uses: actions/cache@v4
+      id: cache-env-staging
+      with:
+        path: |
+          .env
+        key: cacheKey-staging-${{ github.run_id }}-${{ github.run_attempt }}
+    
+    - name: Prepare env variables
+      uses: danielr1996/envsubst-action@1.1.0
+      with:
+        input: .env.example
+        output: .env
+      env:
+        APP_NAME: 'awwa'
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'  # Use the Node.js version required for your theme
+
+    - name: Install dependencies
+      run: |
+        npm install
+
+    - name: Build CSS assets
+      run: |
+        npm run build
+    
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.2
+
+    - name: Install PHP dependencies
+      run: |
+        composer install
+
+    - name: Build CSS assets
+      run: |
+        npm run build
+
+    - name: Zip theme files
+      run: |
+        zip -r theme-package.zip .
+
+    - name: Set up SSH
+      uses: webfactory/ssh-agent@v0.5.4
+      with:
+        ssh-private-key: ${{ secrets.SSH_LIVE_KEY }}
+
+    - name: Upload theme package via SCP
+      run: |
+        scp -P ${{ secrets.SSH_LIVE_PORT }} -o StrictHostKeyChecking=no theme-package.zip ${{ secrets.SSH_LIVE_USER }}@${{ secrets.SSH_LIVE_HOST }}:/export/path
+
+    - name: Deploy theme on server
+      run: |
+        ssh -p ${{ secrets.SSH_LIVE_PORT }} -o StrictHostKeyChecking=no ${{ secrets.SSH_LIVE_USER }}@${{ secrets.SSH_LIVE_HOST }} << 'EOF'
+          
+          export PACKAGE_ZIP=/export/path/theme-package.zip
+
+          unzip -o "$PACKAGE_ZIP" -d /www/wordpress/theme/path
+          
+          [ -f "$PACKAGE_ZIP" ] && rm "$PACKAGE_ZIP"
+        EOF

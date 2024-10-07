@@ -1,0 +1,39 @@
+name: New - Deploy to WP Engine
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest  
+    steps: 
+    - uses: actions/checkout@v4
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install Dependencies
+      working-directory: wp-content/themes/baunfire/
+      run: npm install
+
+    - name: Compile SCSS
+      working-directory: wp-content/themes/baunfire/
+      run: npm run prod
+
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+
+    - name: Install Composer Dependencies
+      working-directory: wp-content/themes/baunfire/
+      run: composer update && composer install
+
+    - name: GitHub Action Deploy to WP Engine
+      uses: wpengine/github-action-wpe-site-deploy@v3
+      with:
+        WPE_SSHG_KEY_PRIVATE: ${{ secrets.SSH_PRIVATE_KEY }} 
+        WPE_ENV: athenelaw
+        SRC_PATH: "wp-content/themes/"
+        REMOTE_PATH: "wp-content/themes/"
+        CACHE_CLEAR: TRUE

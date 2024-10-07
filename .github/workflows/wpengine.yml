@@ -13,11 +13,11 @@ jobs:
         node-version: '18'
 
     - name: Install Dependencies
-      working-directory: wp-content/themes/baunfire/
+      working-directory: wp-content/themes/${{ secrets.THEME_NAME }}/
       run: npm install
 
     - name: Compile SCSS
-      working-directory: wp-content/themes/baunfire/
+      working-directory: wp-content/themes/${{ secrets.THEME_NAME }}/
       run: npm run prod
 
     - name: Set up PHP
@@ -26,14 +26,14 @@ jobs:
         php-version: '8.2'
 
     - name: Install Composer Dependencies
-      working-directory: wp-content/themes/baunfire/
+      working-directory: wp-content/themes/${{ secrets.THEME_NAME }}/
       run: composer update && composer install
 
     - name: GitHub Action Deploy to WP Engine
       uses: wpengine/github-action-wpe-site-deploy@v3
       with:
         WPE_SSHG_KEY_PRIVATE: ${{ secrets.SSH_PRIVATE_KEY }} 
-        WPE_ENV: athenelaw
+        WPE_ENV: ${{ secrets.WPE_ENV }}
         SRC_PATH: "wp-content/themes/"
         REMOTE_PATH: "wp-content/themes/"
         CACHE_CLEAR: TRUE

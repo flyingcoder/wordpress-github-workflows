@@ -16,7 +16,7 @@ RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli
 
 # Copy project files into the container
 COPY ./wp-content /var/www/html
-COPY ./wp-config.php /var/www/html
+# COPY ./wp-config.php /var/www/html
 
 # Set appropriate permissions
 RUN chown -R www-data:www-data /var/www/html/wp-content \
